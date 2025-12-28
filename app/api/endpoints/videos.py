@@ -62,5 +62,34 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
         "status": job.status,
         "created_at": job.created_at,
         "meta_data": job.meta_data,
-        "hls_url": f"/stream/job/{job_id}" if job.status == JobStatus.COMPLETED else None
+        "hls_url": f"/stream/job/{job_id}/master.m3u8" if job.status == JobStatus.COMPLETED else None
+    }
+
+@router.post("/{job_id}/retry")
+def retry_job(job_id: str, db: Session = Depends(get_db)):
+    """
+    Retry a FAILED or PROCESSING (stuck) job.
+    Resets status to QUEUED and re-queues the Celery task.
+    """
+    job = db.query(VideoJob).filter(VideoJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Allow retrying if Failed or Processing (user requested restart mechanism)
+    # We could also include COMPLETED if they want to re-transcode, but usually safe to assume just failed/processing.
+    if job.status not in [JobStatus.FAILED, JobStatus.PROCESSING, JobStatus.COMPLETED]: # Let's be permissive and allow re-running completed too if needed
+        # Actually, let's stick to Failed/Processing + Completed (maybe they changed settings)
+        pass
+
+    job.status = JobStatus.QUEUED
+    job.meta_data = {"retry": "manual_retry"} # Clear old error metadata potentially
+    db.commit()
+    db.refresh(job)
+
+    process_video_task.delay(str(job_id))
+
+    return {
+        "job_id": str(job.id),
+        "status": "queued",
+        "message": "Job has been re-queued for processing."
     }

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamer Test Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0051a2;
+        }
+
+        video {
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            background: black;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Video Stream Player</h1>
+        <div>
+            <input type="text" id="jobId" placeholder="Enter Job ID (UUID)" style="width: 300px;">
+            <button onclick="loadVideo()">Play Stream</button>
+        </div>
+        <div class="status" id="statusMessage"></div>
+
+        <video id="video" controls></video>
+    </div>
+
+    <script>
+        var video = document.getElementById('video');
+        var statusMsg = document.getElementById('statusMessage');
+        var hls = null;
+
+        function loadVideo() {
+            var jobId = document.getElementById('jobId').value.trim();
+            if (!jobId) {
+                alert("Please enter a Job ID");
+                return;
+            }
+
+            // Construct the stream URL
+            // Assuming the frontend is served from the same origin or localhost:8000
+            var streamUrl = window.location.origin + "/stream/job/" + jobId + "/master.m3u8";
+            
+            // Or hardcode for robustness if opening file directly
+            if (window.location.protocol === 'file:') {
+                 streamUrl = "http://localhost:8000/stream/job/" + jobId + "/master.m3u8";
+            }
+
+            statusMsg.innerText = "Loading: " + streamUrl;
+
+            if (Hls.isSupported()) {
+                if (hls) {
+                    hls.destroy();
+                }
+                hls = new Hls();
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play().catch(e => console.error("Auto-play prevented", e));
+                    statusMsg.innerText = "Playing: " + streamUrl;
+                });
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                         statusMsg.innerText = "Error: " + data.type + " - " + data.details;
+                    }
+                });
+            }
+            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = streamUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play();
+                });
+            } else {
+                statusMsg.innerText = "HLS is not supported in this browser.";
+            }
+        }
+    </script>
+</body>
+
+</html>
