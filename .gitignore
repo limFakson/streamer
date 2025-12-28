@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# Docker
+.docker_data/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+test_video.mp4
+
+# Project Specific
+celerybeat-schedule
+*.log
+.DS_Store

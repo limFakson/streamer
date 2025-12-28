@@ -6,7 +6,7 @@ A production-ready, containerized video streaming infrastructure built with Pyth
 
 - **Scalable Architecture**: Dockerized microservices (API, Worker, Redis, Postgres, MinIO).
 - **Asynchronous Transcoding**: Offloads heavy video processing to background Celery workers.
-- **Adaptive Bitrate Streaming (ABR)**: Automatically generates 1080p, 720p, and 360p HLS playlists for optimal playback on any device.
+- **Adaptive Bitrate Streaming (ABR)**: Automatically generates 720p and 360p HLS playlists for optimal playback.
 - **HLS Standard**: Uses HTTP Live Streaming (.m3u8 + .ts) for broad compatibility.
 - **Object Storage**: Cloud-agnostic storage layer (MinIO for local, AWS S3 for production).
 - **Observability**: Built-in health checks and system statistics endpoints.
